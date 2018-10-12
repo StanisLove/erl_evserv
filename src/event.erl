@@ -9,8 +9,8 @@ start_link(EventName, Delay) ->
   spawn_link(?MODULE, init, [self(), EventName, Delay]).
 
 %% Internal function for events
-init(Server, EventName, Delay) ->
-  loop(#state{server=Server, name=EventName, to_go=normalize(Delay)}).
+init(Server, EventName, DateTime) ->
+  loop(#state{server=Server, name=EventName, to_go=time_to_go(DateTime)}).
 
 %% Function operate with list of time delays to avoid 49 days restriction
 loop(S = #state{server = Server, to_go=[T|Next]}) ->
@@ -38,6 +38,15 @@ cancel(Pid) ->
       ok
   end.
 
+time_to_go(Timeout = {{_,_,_}, {_,_,_}}) ->
+  Now = calendar:local_time(),
+  ToGo = calendar:datetime_to_gregorian_seconds(Timeout) -
+         calendar:datetime_to_gregorian_seconds(Now),
+  Secs = if ToGo > 0 -> ToGo;
+            ToGo =< 0 -> 0
+         end,
+  normalize(Secs).
+
 normalize(N) ->
   Limit = 49 * 24 * 60 * 60,
-  [N rem Limit | lists:duplication(N div Limit, Limit)].
+  [N rem Limit | lists:duplicate(N div Limit, Limit)].
