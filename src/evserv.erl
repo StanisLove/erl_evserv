@@ -3,10 +3,6 @@
 -record(state, {events, clients}).
 -record(event, {name="", description="", pid, timeout={{1970,1,1},{0,0,0}}}).
 
-init() ->
-  %% we can load events list from file here (or receive it as param)
-  loop(#state{events=orddict:new(), clients=orddict:new()}).
-
 start() ->
   register(?MODULE, Pid=spawn(?MODULE, init, [])),
   Pid.
@@ -14,6 +10,11 @@ start() ->
 start_link() ->
   register(?MODULE, Pid=spawn_link(?MODULE, init, [])),
   Pid.
+
+init() ->
+  %% we can load events list from file here (or receive it as param)
+  loop(#state{events=orddict:new(), clients=orddict:new()}).
+
 
 terminate() -> ?MODULE ! shutdown.
 
@@ -50,7 +51,7 @@ listen(Delay) ->
       [M | listen(0)]
   after Delay * 1000 ->
     []
-  end
+  end.
 
 loop(S = #state{}) ->
   receive
